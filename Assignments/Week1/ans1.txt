@@ -1,0 +1,262 @@
+705326387 Brandon Truong
+
+Lab 1:
+1.
+man -k keyword
+
+
+Using both hints apropos and man man, I searched up the manual for both man and apropos. We see that the definition of apropos is to search for keywords in the manual. We can then look up man's manual to see that man -k is equivalent to apropos. The listed example in the manual is man -k printf, which searches for the keyword printf.
+
+used:
+man man
+man apropos
+man -k printf
+
+2.
+mv is located in both
+/usr/local/cs/bin/mv
+/usr/bin/mv
+but defaults to the first choice due to $PATH
+
+while sh is located in
+/usr/bin/sh
+
+used:
+man which
+which -a mv (-a prints all paths)
+which -a sh
+
+3.
+/usr/bin/tr
+/usr/bin/ar
+/usr/bin/pr
+
+
+tr translates, squeezes, or deletes characters
+
+ar creates, modifies, and extracts from archives
+
+pr converts text files for printing
+
+
+I used find /usr/bin -name "?"r -executable, which checks for any character followed by r in /usr/bin. The command -executable checks if it is an executable. This gives us the paths above, which we can then use man on respectively
+
+used:
+man find
+find /usr/bin -name "?"r -executable
+man tr
+man ar
+man pr
+
+4.
+/usr/bin/emacs-24.3
+
+
+I first go into /usr/bin and use ls -l emacs, which gives us
+
+lrwxrwxrwx 1 root root 23 Jan  2  2019 emacs -> /etc/alternatives/emacs
+
+This means it links to emacs in /etc/alternatives. I then check in /etc/alternatives with ls -l emacs to get
+
+lrwxrwxrwx 1 root root 19 Jan  2  2019 emacs -> /usr/bin/emacs-24.3
+
+This means that when we execute emacs, we actually run emacs-24.3 since they are symbolically linked. we cna double check with find /usr/bin -name emacs-24.3 -executable that tells us that emacs is an executable, giving us
+
+/usr/bin/emacs-24.3
+
+used:
+cd /usr/bin
+ls -l emacs
+cd /etc/alternatives
+ls -l emacs
+find /usr/bin -name emacs-24.3 -executable
+
+5.
+plain gcc: gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) (GCC)
+gcc (from $PATH): gcc version 9.3.0 (GCC)
+
+
+Typing in gcc -v gives us
+
+gcc version 9.3.0 (GCC)
+
+Using which gcc gives us
+
+/usr/local/cs/bin/gcc
+
+which is the first path searched. The plain gcc is found in /usr/bin/gcc, which we can find the version of with /usr/bin/gcc -v, giving us the plain gcc's version 
+
+gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) (GCC)
+
+6.
+chmod u+sx,o-w changes the permission of the file; u+sx sets the userID of the owner on execution and allows the owner to execute while o-w removes the permission for others not in the owner's group to write.
+
+used:
+man chmod
+
+7.
+446 files modified within 4 weeks
+/usr/local/cs
+/usr/local/cs/src/git
+/usr/local/cs/src/git/RCS
+/usr/local/cs/src/coreutils
+/usr/local/cs/src/coreutils/RCS
+
+
+I used 
+
+find /usr/local/cs -type d -mtime -28 | wc -l
+
+to find the number of files modified within 4 weeks, which gives us 
+
+446
+
+I then used
+
+find /usr/local/cs -type d -mtime -28
+
+to find the first 5 entries of whatever has been modified, which are
+
+/usr/local/cs
+/usr/local/cs/src/git
+/usr/local/cs/src/git/RCS
+/usr/local/cs/src/coreutils
+/usr/local/cs/src/coreutils/RCS
+
+as of 4/06/2020 2:19 am PST
+
+used:
+man find
+find /usr/local/cs -type d -mtime -28 | wc -l
+find /usr/local/cs -type d -mtime -28
+
+8.
+280 Symbolic links
+
+
+I first use
+
+which -a find
+
+to find its location, which is at
+
+/usr/bin/find
+
+I then use
+
+cd /usr/bin
+
+to enter the directory and then use
+
+find . -type l | wc -l
+
+to obtain the amount of symbolic links, which is
+
+280
+
+used:
+which -a find
+cd /usr/bin
+find . -type l | wc -l
+
+9.
+librom1394.so.0.3.0 
+last modified Dec 28 2013
+
+
+I used find -a -l -t in /usr/lib64/ to find all files in a long list format, arranged by time modified. This gives us
+
+-rwxr-xr-x.   1 root root       19408 Dec 28  2013 librom1394.so.0.3.0
+
+which is the oldest file in the usr/lib64/
+
+used:
+man ls
+cd /usr/lib64/
+ls -a -l -t
+
+10.
+I used man locale to find that "locale is based on the settings of the environment variables that control the locale", according to the manual.
+
+used:
+man locale
+
+11.
+downcase-dwim                 M-x ... RET
+   Downcase words in the region, if active; if not, downcase word at
+   point.
+downcase-region               C-x C-l
+   Convert the region to lower case.  In programs, wants two
+   arguments.
+downcase-word                 M-l
+   Convert to lower case from point to end of word, moving over.
+
+
+I entered emacs and used
+
+C-h a downcase
+
+to find all commands with downcase in them, which are shown above
+
+used:
+emacs
+C-h a downcase
+
+12.
+C-M-r begins reverse incremental regexp search
+C-M-s begins forward incremental regexp search
+C-M-u moves up in paranthesis structure
+C-M-v scrolls to the next window
+
+I entered emacs and used
+
+C-h r
+
+to enter the manual
+
+I then used
+
+C-s
+
+to search for C-M-r to C-M-v shown above
+
+used:
+emacs
+C-h r
+C-s "C-M-r"
+C-s "C-M-s"
+C-s "C-M-t"
+C-s "C-M-u"
+C-s "C-M-v"
+
+13.
+I entered emacs and used the same commands as in 12 to search for C-g.
+C-g sets the quit-flag variable to t, which is checked by emacs lisp and quits when it is set to t. The command it runs when emacs is waiting for input is keyboard-quit. Signalling another C-g before the first one is recognized signals an emergency escape
+
+used:
+C-h r
+C-s "C-g"
+
+14.
+Entering emacs manual, I then searched for the yank keyword, which reinserts text that was previously killed. One way of yanking is to use
+
+C-y
+
+which yanks the last kill into the buffer
+
+used:
+C-h r
+C-s yank
+
+15.
+ls -l outputs visible files in the /usr/bin directory in a long list format while dired gives a long list of all, even hidden, files, which we can then interact with. It also shows the path of the current directory at the top and the total used and available, which is not given in ls -l
+
+I entered emacs's manual and searched for Dired, which tells us that it makes an emacs buffer containing a listing of a directory and has normal emacs command to move around and dired commands to operate on the listed files. I then tested both dired and ls -l out in /usr/bin to clarify differences.
+
+used:
+emacs
+C-s "Dired"
+cd /usr/bin
+ls -l
+emacs
+C-x d /usr/bin

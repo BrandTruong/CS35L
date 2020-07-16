@@ -1,0 +1,413 @@
+705326387 Brandon Truong
+
+1. I wrote my tr2b.c file using visual studio code, then importing it to the lnxsrv by winscp.
+I then compiled it using
+COMMAND: gcc -g -Wall -std=c99 tr2b.c -o tr2b
+
+2. I did the same as the previous step, replacing all fprintf, getchar, and putchar with their respective read and write equivalents into a file called tr2u.c
+I then compiled this using
+COMMAND: gcc -g -Wall -std=c99 tr2u.c -o tr2u
+
+Afterwards, to test functionality, I tested them with
+COMMANDS:
+printf 'abcde' | ./tr2b abc fgh
+printf 'abcde' | ./tr2u abc fgh
+printf 'abcde' | tr abc fgh
+
+which all prints "fghde", and
+COMMANDS:
+printf 'abcde' | ./tr2b acc fgh
+printf 'abcde' | ./tr2u acc fgh
+printf 'abcde' | ./tr2b abcd fgh
+printf 'abcde' | ./tr2u abcd fgh
+
+which error out two messages due to duplicate and different lengths
+
+Output:
+Duplicate char in from
+Duplicate char in from
+To and from strings are not the same length
+To and from strings are not the same length
+
+3. I first created a large file using a simple C program consisting of
+---START OF CODE---
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(void)
+{
+  for (unsigned int i = 0; i < 5000000; i++) {
+      unsigned int temp = (i % 26) + 65;
+      putchar((char) temp);
+  }
+}
+---END OF CODE---
+
+and
+COMMAND: gcc -g -Wall -std=c99 big.c -o big
+COMMAND: ./big > big.txt
+
+which just outputs 5 MB of A-Z, which I piped into big.txt
+Another option was doing
+COMMAND: head --bytes=5000000 /dev/urandom > big.txt
+
+but I prefer the other way more.
+I then tested the tr2b and tr2u by doing
+
+a) to test from one file to another
+
+COMMANDS:
+strace -c ./tr2b 'abc' 'def' < big.txt > tr2bbig.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 62.66    0.001210           2       611           write
+ 27.86    0.000538           1       613           read
+  2.95    0.000057           6         9           mmap
+  1.86    0.000036           9         4           mprotect
+  1.09    0.000021           5         4           fstat
+  0.98    0.000019          10         2           open
+  0.88    0.000017          17         1           munmap
+  0.52    0.000010          10         1         1 access
+  0.41    0.000008           4         2           close
+  0.36    0.000007           7         1           execve
+  0.21    0.000004           4         1           brk
+  0.21    0.000004           4         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001931                  1250         1 total
+
+strace -c ./tr2u 'abc' 'def' < big.txt > tr2ubig.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 54.97   28.909859           6   5000000           write
+ 45.03   23.683785           5   5000002           read
+  0.00    0.000044           6         7           mmap
+  0.00    0.000036           9         4           mprotect
+  0.00    0.000019          10         2           open
+  0.00    0.000013          13         1           munmap
+  0.00    0.000009           9         1         1 access
+  0.00    0.000008           4         2           fstat
+  0.00    0.000008           8         1           execve
+  0.00    0.000007           4         2           close
+  0.00    0.000004           4         1           brk
+  0.00    0.000004           4         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   52.593796              10000024         1 total
+
+b) and when testing from a file to the terminal,
+
+COMMANDS:
+strace -c ./tr2b 'abc' 'def' < big.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 92.66    0.020060           4      4883           write
+  7.34    0.001588           3       613           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         9           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.021648                  5522         1 total
+
+strace -c ./tr2u 'abc' 'def' < big.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 54.01   30.406707           6   5000000           write
+ 45.99   25.890996           5   5000002           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   56.297703              10000024         1 total
+
+These results show that buffered I/O run much more efficiently than unbuffered I/O, as evident with tr2b's time of 0.001931/0.021648 versus tr2u's time of 52.593796/56.297703 (in seconds).
+This can be seen with the amount of calls they have. Unbuffered uses around 10 mil, while tr2b uses 1250/5522, with the difference in tr2b due to writing to terminal.
+
+We can test to see if they are correct by doing
+COMMAND:
+diff tr2bbig.txt tr2ubig.txt > trdiff.diff
+
+to see if they have the same output and thus an empty diff file, and
+COMMANDS:
+strace -c tr 'abc' 'def' < big.txt > trbig.txt
+diff trbig.txt tr2ubig.txt > trorigdiff.diff
+
+which gives us
+
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 51.09    0.005281           9       611           write
+ 29.71    0.003071           5       615           read
+ 18.95    0.001959         280         7           close
+  0.25    0.000026           9         3           munmap
+  0.00    0.000000           0         7         3 open
+  0.00    0.000000           0         5           fstat
+  0.00    0.000000           0        10           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         4           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+  0.00    0.000000           0         1           fadvise64
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.010337                  1270         4 total
+
+as well as an empty diff file, meaning the code works as intended.
+
+4. We can test the speed of the programs by using the time command
+
+a) when copying from one file to another
+
+COMMANDS:
+time ./tr2b 'abc' 'def' < big.txt > tr2brun.txt
+real    0m0.175s
+user    0m0.125s
+sys     0m0.007s
+
+time ./tr2u 'abc' 'def' < big.txt > tr2urun.txt
+real    0m12.086s
+user    0m3.399s
+sys     0m8.672s
+
+b) when copying a file to terminal
+
+COMMANDS:
+time ./tr2b 'abc' 'def' < big.txt
+real    0m2.182s
+user    0m0.163s
+sys     0m0.041s
+
+time ./tr2u 'abc' 'def' < big.txt
+real    0m12.086s
+user    0m3.399s
+sys     0m8.672s
+
+We can see the that tr2b runs in 0m0.175s and 0m2.182s while tr2u runs in 0m12.086s and 0m12.086s.
+This gives us a difference in time of a) 9.904 and b) 11.911 seconds, with buffered being clearly faster.
+
+---------------------------------------------------
+Homework Portion
+
+I revised my previous C program to accept an int as the number of iterations, and to add spaces periodically
+
+---START OF CODE---
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Not valid amount of args\n");
+    }
+    int max = atoi(argv[1]);
+    for (unsigned int i = 0; i < max; i++) {
+      unsigned int temp = (i % 26) + 65;
+      if (temp == 65 || temp == 69 || temp == 85) {
+	  char sp = ' ';
+          putchar(sp);
+      } else {
+	  putchar((char) temp);
+      }
+  }
+}
+---END OF CODE---
+COMMAND: gcc -g -Wall -std=c99 newbig.c -o newbig
+
+I then created a bunch of files with
+COMMANDS:
+./newbig 0 > 0file.txt
+./newbig 100 > 100file.txt
+./newbig 10000 > 10000file.txt
+./newbig 1000000 > 1000000file.txt
+
+After writing my code for sfrobu, I compiled it with
+COMMAND: gcc -g -Wall -std=c99 sfrobu.c -o sfrobu
+
+and ran
+COMMANDS:
+time ./sfrob < 0file.txt > temp.txt
+
+real    0m0.003s
+user    0m0.000s
+sys     0m0.002s
+
+time ./sfrob < 100file.txt > temp.txt
+
+real    0m0.003s
+user    0m0.000s
+sys     0m0.002s
+
+time ./sfrob < 10000file.txt > temp.txt
+
+real    0m0.024s
+user    0m0.019s
+sys     0m0.002s
+
+time ./sfrob < 1000000file.txt > temp.txt
+
+real    0m2.723s
+user    0m2.508s
+sys     0m0.088s
+
+----------
+
+time ./sfrobu < 0file.txt > temp.txt
+
+real    0m0.004s
+user    0m0.001s
+sys     0m0.000s
+
+time ./sfrobu < 100file.txt > temp.txt
+
+real    0m0.006s
+user    0m0.001s
+sys     0m0.003s
+
+time ./sfrobu < 10000file.txt > temp.txt
+
+real    0m0.265s
+user    0m0.068s
+sys     0m0.195s
+
+time ./sfrobu < 1000000file.txt > temp.txt
+
+real    0m25.879s
+user    0m6.801s
+sys     0m18.943s
+
+----------
+
+time ./sfrobu -f < 0file.txt > temp.txt
+
+real    0m0.003s
+user    0m0.000s
+sys     0m0.002s
+
+time ./sfrobu -f < 100file.txt > temp.txt
+
+real    0m0.012s
+user    0m0.001s
+sys     0m0.006s
+
+time ./sfrobu -f < 10000file.txt > temp.txt
+
+real    0m0.263s
+user    0m0.059s
+sys     0m0.202s
+
+time ./sfrobu -f < 1000000file.txt > temp.txt
+
+real    0m26.373s
+user    0m7.955s
+sys     0m18.292s
+
+We see that sfrobu uses unbuffered, which means that it runs slower than sfrob
+
+We can deduce from time complexity that the function would fit the graph of o(N(log(N))) due to qsorts time complexity being the worst case. 
+However, since estimating a n(log(n)) graph would be significantly more challenging than a linear, we instead use linreg (TI-84 Calc) to calculate it.
+N(log(N)) also does not hold in at lower values of lines, making it harder to get an accurate result. (due to additional commands of likely O(N) complexity)
+
+sfrob: 2.72*10^-6x+8.49*10^-4
+sfrobu: 2.58*10^-5x+0.0046
+sfrobu -f: 2.63*10^-5+0.004
+
+where x is the number of lines
+These have a correlation of r=.99 so the relationship is pretty strong.
+
+To see what is being used by sfrobu, we can do
+COMMANDS:
+strace -c ./sfrobu < 0file.txt > temp.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+  0.00    0.000000           0         2           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         3           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         4           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000000                    28         1 total
+
+strace -c ./sfrobu < 100file.txt > temp.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 96.54    0.005667           4      1494           write
+  0.75    0.000044           6         7           mmap
+  0.66    0.000039          13         3           fstat
+  0.60    0.000035           9         4           mprotect
+  0.27    0.000016           4         4           brk
+  0.26    0.000015           8         2           open
+  0.20    0.000012          12         1           munmap
+  0.19    0.000011           6         2           read
+  0.17    0.000010          10         1           arch_prctl
+  0.12    0.000007           4         2           close
+  0.12    0.000007           7         1         1 access
+  0.12    0.000007           7         1           execve
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.005870                  1522         1 total
+
+strace -c ./sfrobu < 10000file.txt > temp.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.94    0.668734           5    145080           write
+  0.02    0.000125          42         3           read
+  0.01    0.000054           6         9           mmap
+  0.01    0.000053           4        14           brk
+  0.01    0.000047          12         4           mprotect
+  0.01    0.000041          41         1           arch_prctl
+  0.01    0.000040          13         3           munmap
+  0.00    0.000020           7         3           open
+  0.00    0.000020           5         4           fstat
+  0.00    0.000010          10         1         1 access
+  0.00    0.000008           3         3           close
+  0.00    0.000008           8         1           execve
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.669160                145126         1 total
+
+strace -c ./sfrobu < 1000000file.txt > temp.txt
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.98   89.603547           6  14500084           write
+  0.02    0.014306        4769         3           read
+  0.00    0.004278         856         5           munmap
+  0.00    0.002193           1      1994           mremap
+  0.00    0.000451           1       510           brk
+  0.00    0.000006           1        11           mmap
+  0.00    0.000000           0         3           open
+  0.00    0.000000           0         3           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   89.624781              14502624         1 total
+
+We can see that mmap is being called to allocate, munmap to deallocate, and mremap to reallocate. These are found inside of sys/mman.h, which are the system calls to allocate and whatnot.
+These functions can be used in place of stdlib.h malloc, realloc, and free. We can look up the arguments with man, giving us
+
+void *mmap(void *addr, size_t length, int prot, int flags,
+                  int fd, off_t offset);
+
+int munmap(void *addr, size_t length);
+
+void *mremap(void *old_address, size_t old_size,
+                    size_t new_size, int flags, ... /* void *new_address */);

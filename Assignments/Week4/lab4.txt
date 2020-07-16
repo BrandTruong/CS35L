@@ -1,0 +1,96 @@
+705326387 Brandon Truong
+
+1. I first did
+COMMAND: wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz
+in order to get the tarball, then did
+COMMAND: wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz.sig
+COMMAND: wget https://ftp.gnu.org/gnu/gnu-keyring.gpg
+to get the additional files
+
+I then verified the signature by running the shell command
+COMMAND: gpg --verify --keyring ./gnu-keyring.gpg coreutils-8.29.tar.xz.sig
+which gives us the result
+
+gpg: Signature made Wed Dec 27 10:29:05 2017 PST using RSA key ID 306037D9
+gpg: Good signature from "Pdraig Brady <P@draigBrady.com>"
+gpg:                 aka "Pdraig Brady <pbrady@redhat.com>"
+gpg:                 aka "Pdraig Brady <pixelbeat@gnu.org>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 6C37 DC12 121A 5006 BC1D  B804 DF6F D971 3060 37D9
+
+This means that while it is a valid signature, it may not be actually from 
+Pdraig Brady, as someone could impersonate him. It's not a key that we have 
+verified to be trusted, thus signalling that someone could've faked the key 
+to make it seem like they are Brady.
+
+2. To extract the tarball, I did
+COMMAND: tar -xJvf coreutils-8.29.tar.xz
+then
+COMMAND: cd coreutils-8.29
+to go into the directory, then
+COMMAND: ./configure --prefix=/u/cs/ugrad/brandont/Desktop/coreutils
+to set installation location, then
+COMMAND: make
+to build the executable. I then did
+COMMAND: make install
+to copy the built to the target install location.
+Looking through the outputted text, it appears to have installed successfully
+
+3. To reproduce the bug with coreutils, I first entered the folder with
+COMMAND: cd ~/Desktop/coreutils/bin
+then tested ls by using
+COMMAND: ./ls ~/Desktop -aA
+which prints out
+
+.  ..  CS31  CS32  CS33  CS35L  Desktop  coreutils  datalab-handout
+
+. and .. being the first two results, which we don't want, then the rest of 
+the files
+We can also call this ls by doing
+COMMAND: ~/Desktop/coreutils/bin/ls ~/Desktop -aA
+
+4. I got the patch by going to the message board and copying it into patch.diff
+while inside coreutils-8.29
+COMMAND: nano patch.diff
+
+copy the bugfix snippet from the attachment:
+
+[Snippet:start-end]
+diff --git a/NEWS b/NEWS
+...
++Exit $fail
+
+COMMAND: [right-mouse-click] to paste
+nano was used in place of emacs since emacs has autoindentation issues for me
+I then use
+COMMAND: patch -p1 < patch.diff
+patching the files with the messages
+
+patching file NEWS
+Hunk #1 FAILED at 4.
+1 out of 1 hunk FAILED -- saving rejects to file NEWS.rej
+patching file src/ls.c
+Hunk #1 succeeded at 1900 (offset -3 lines).
+patching file tests/local.mk
+patching file tests/ls/a-option.sh
+
+indicating that we patched the file, with NEWS failing since it doesn't match
+with the original
+
+5. By typing
+COMMAND: make
+I notice that automake is missing from my system, meaning I need to reconfigure
+it
+I do this by 
+COMMAND: autoreconf -fi
+-fi being short for force and install, which reconfigures to accept the patches
+I then run
+COMMAND: make
+giving us the patched ls in coreutils-8.29/src (original directory)
+
+6. Running the command
+COMMAND: ls -aA ~/Desktop
+inside coreutils-8.29/src thus gives us
+CS31  CS32  CS33  CS35L  Desktop  coreutils  datalab-handout
+which is what we want.

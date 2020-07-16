@@ -1,0 +1,67 @@
+705326387 Brandon Truong
+
+1. We can test the time performance by doing
+COMMAND: time ls -aA
+COMMAND: time ~/Desktop/coreutils/bin/ls -aA
+These gives us the realtime of .004s and .003s, meaning there is no 
+significant performance difference
+However, we have better performance usage with the patch since we get to 
+override options, a functionality that can help users
+
+2. We should watch out for code implementing the original Coreutils, as 
+they might utilize the bug and thus breaks/results in unexpected behavior 
+when using the patched version. If say I wanted ls -aA to not override, then 
+the patch would not allow me to do that without additional code to 'unpatch'.
+
+3. randline.py errors out
+
+Traceback (most recent call last):
+  File "./randline.py", line 70, in <module>
+    main()
+  File "./randline.py", line 64, in main
+    sys.stdout.write(generator.chooseline())
+  File "./randline.py", line 34, in chooseline
+    return random.choice(self.lines)
+  File "/usr/lib64/python2.7/random.py", line 274, in choice
+    return seq[int(self.random() * len(seq))]  # raises IndexError if seq is
+ empty
+IndexError: list index out of range
+
+when called on empty files like /dev/null, since the code has a default of 1 
+numline when called. Since in actuality there are 0 lines, this results in an 
+error when trying to iterate through it.
+
+4. When run through python3, I get the following error:
+
+File "randline.py", line 65
+     except IOError as (errno, strerror):
+                       ^
+SyntaxError: invalid syntax
+
+I can check online that python3 has merged IOError into OSError in version 3.3
+which means that this part is legacy code that only works on earlier versions.
+It would need to be adjusted in order to work in python3, since IOError is no
+longer valid syntax.
+
+5. If I run python2 on my code with -i, I get
+
+Traceback (most recent call last):
+  File "shuf.py", line 109, in <module>
+    main()
+  File "shuf.py", line 73, in main
+    str_min_value, str_max_value = (options.input_range).split("-", maxsplit=1)
+TypeError: split() takes no keyword arguments
+
+which means that split has been updated in python3 to take additional args.
+This means that it does not run under python2.
+If I run my code on python2 with standard input, I get
+
+Traceback (most recent call last):
+  File "shuf.py", line 109, in <module>
+    main()
+  File "shuf.py", line 103, in main
+    for val in shuf:
+TypeError: instance has no next() method
+
+which happens since python3 has updated next to be __next__() rather 
+than next(). This causes an error where it can no longer iterate.

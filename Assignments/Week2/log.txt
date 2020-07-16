@@ -1,0 +1,86 @@
+705326387 Brandon Truong
+
+To generate my public and private keys, I did
+
+ssh brandont@lnxsrv09.seas.ucla.edu (with PuTTY)
+ls -a
+mkdir .ssh
+cd .ssh
+ssh-keygen
+(entered in filename BrandTruong and a passphrase)
+
+To set up authorized keys on the remote server, I did
+
+ssh brandont@lnxsrv07.seas.ucla.edu (with PuTTY)
+cd .ssh
+touch authorized_keys
+chmod 600 authorized_keys
+cat BrandTruong.pub >> authorized_keys
+cat authorized_keys | wc -l
+
+To test the identity file, I did
+
+(go back to lnxsrv09)
+ssh -i BrandTruong brandont@lnxsrv07.seas.ucla.edu
+(entered in passphrase)
+exit
+
+To use ssh-agent, I did
+
+eval `ssh-agent`
+ssh-add BrandTruong
+(entered in passphrase)
+
+To test ssh-agent, I then did
+
+ssh -i BrandTruong brandont@lnxsrv07.seas.ucla.edu
+(no passphrase needed)
+
+To set up port forwarding, I went into PuTTY's configuration on the left side in SSH>X11 and enabled X11 Forwarding and set X display location as localhost:0.0.
+I then installed xming to be able to xforward properly. I tested port forwarding by logging into lnxsrv09.seas.ucla.edu and using
+
+xeyes
+
+which gives me a picture of googly eyes that follow my mouse
+
+To set up multihopping, I did
+
+cd .ssh
+eval `ssh-agent`
+ssh-add BrandTruong
+(entered in passphrase)
+touch config
+emacs config
+
+and pasted in the following
+
+Host seas
+        User brandont
+        HostName lnxsrv09.seas.ucla.edu
+        Port 22
+        IdentityFile ~/.ssh/SEAS
+        ServerAliveInterval 240
+        ServerAliveCountMax 2
+
+Host seas07
+        User brandont
+        HostName lnxsrv07.seas.ucla.edu
+        Port 22
+        IdentityFile ~/.ssh/SEAS
+        ProxyCommand ssh seas -W %h:%p
+
+Host seas06
+        User brandont
+        hostName lnxsrv06.seas.ucla.edu
+        Port 22
+        IdentityFile ~/.ssh/SEAS
+        ProxyCommand ssh seas07 -W %h:%p
+
+which should allow me to connect to lnxsrv06 by using alias seas06 to multi-hop from 09 to 07 to 06. (skipping passphrase by using seas-agent before)
+
+I also attempted multihopping by using 
+ssh -A -t lnxsrv09.seas.ucla.edu ssh -A -t lnxsrv07.seas.ucla.edu ssh -A lnxsrv06.seas.ucla.edu
+
+which should let me multi-hop with a really long line, using -A with ssh-agent to hop with Agent authentication.
+
+

@@ -1,0 +1,38 @@
+705326387 Brandon Truong
+
+Homework 2
+
+gpg2 --gen-key
+1 (default RSA and RSA)
+2048 bits
+0 (key does not expire)
+y
+Brandon Truong
+btruong100381@gmail.com
+CS35L
+O (Okay)
+(Create a passphrase)
+
+gpg2 --list-keys
+gpg --armor --output hw-pubkey.asc --export btruong100381@gmail.com
+gpg --output hw-pubkey.sig --detach-sig hw-pubkey.asc
+(entered in private key passphrase)
+gpg --verify hw-pubkey.sig hw-pubkey.asc
+
+Question 1
+Even if they can view all the bytes going across the network, my network should still be safe since SSH is encrypted and doesn't exchange password data over the network.
+Since private key remains on the original client, they would only get encrypted data, which would take forever to decrypt. 
+
+(1)
+If they installed a keylogger, there is a slightly higher risk, since there is a chance that they logged my passphrase.
+However, since private keys are unique, they should not be able to duplicate my private key, thus remaining secure.
+
+(2)
+If they had temporary access to a USB containing all my files, then my network is no longer secure as they would have all my keys.
+This allows them to access any sensitive info and also impersonate me, encrypting or decrypting whatever they want.
+
+Question 2
+gpg --verify does not verify that I created the file; it checks that the signature is valid without checking who signed it. 
+gpg2 only knows which key signed the file, not who signed it. 
+An adversary could impersonate me by creating a valid signature with a different key, or if they had access to my public key, could decrypt and re-encrypt (with a different private key). 
+We can circumvent this by checking ownership of keys with things such as a public key infrastructure. This allows us to check if the public key is created by me.

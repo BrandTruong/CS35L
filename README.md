@@ -15,8 +15,8 @@ Assignment 9| 100/100|
 Assignment 10| 100/100|
 Finals| 72.7/100|
 
-Notes: Assignment 5 has an issue with cases
-  Failed Test on handling space comparisons
-  Failed Test on multiple spaces
+Notes: Assignment 5 has an issue with cases <br/>
+  Failed Test on handling space comparisons <br/>
+  Failed Test on multiple spaces <br/>
   Failed Test on entire range of char value
 

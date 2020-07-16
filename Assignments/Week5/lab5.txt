@@ -1,0 +1,187 @@
+705326387 Brandon Truong
+
+I first did
+COMMAND: wget https://web.cs.ucla.edu/classes/spring20/cs35L/assign/coreutils-with-bug.tar.gz
+in order to grab the old version of coreutils with the bug in it, then extracted it
+COMMAND: tar -xvzf coreutils-with-bug.tar.gz
+configure it with
+COMMAND: /configure --prefix=/u/cs/ugrad/brandont/Desktop/CS35L/Week5/coreutils
+COMMAND: make
+while building, we see that we get an error:
+In file included from utimecmp.c:41:
+utimens.h:2:5: error: conflicting types for 'futimens'
+    2 | int futimens (int, char const *, struct timespec const [2]);
+      |     ^~~~~~~~
+In file included from utimecmp.h:25,
+                 from utimecmp.c:25:
+/usr/include/sys/stat.h:373:12: note: previous declaration of 'futimens' was here
+  373 | extern int futimens (int __fd, const struct timespec __times[2]) __THROW;
+      |            ^~~~~~~~
+We can see that the latter uses different parameters, skipping out on char const *, thus causing an error
+I then used
+COMMAND: wget https://web.cs.ucla.edu/classes/spring20/cs35L/assign/coreutils.diff
+to get the patch and
+COMMAND: patch -p0 < coreutils.diff
+to patch it, then rebuild it with
+COMMAND: make
+This gives us the patched version of coreutils, as the futimen function with three
+parameters is now renamed to coreutils_futimen
+We do not need to do make install since I use the original make to run ls
+We can test the bug by doing
+
+COMMANDS:
+tmp=$(mktemp -d)
+cd $tmp
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+touch now
+sleep 1
+touch now1
+TZ=UTC0 ~/Desktop/CS35L/Week5/coreutils-with-bug/src/ls -lt --full-time wwi-armistice-cs35L now now1
+
+Running that snippet of shell commands gives us the result:
+
+-rw-r--r-- 1 brandont csugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-cs35L
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 10:35:12.848531948 +0000 now1
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 10:35:06.788425380 +0000 now
+
+Where the ordering shows 1918 as the most recent result, even though now1 should be on top.
+We can try fixing this by going into gdb and debugging
+COMMAND: gdb ~/Desktop/CS35L/Week5/coreutils-with-bug/src/ls
+Inside gdb, we can check the functions with
+COMMAND: info functions
+We see that there is a function called
+
+2884:   static int compare_mtime(V, V);
+
+We can try breaking there with
+COMMAND: break compare_mtime
+then running the code with
+COMMAND: run -lt --full-time wwi-armistice-cs35L now now1
+We then get
+
+Breakpoint 1, compare_mtime (a=0x6171c0, b=0x617270) at ls.c:2884
+2884    static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+
+We can check if there is anything wrong by stepping in and looking at local vars
+COMMAND: stepi
+
+timespec_cmp (b=..., a=...) at ../lib/timespec.h:49
+49        return diff ? diff : a.tv_nsec - b.tv_nsec;
+
+COMMAND: info local
+diff = 6
+
+This diff, if we look at the output times, seems to be the 6 seconds diff from now and now1
+Since it looks fine, we can then continue with
+COMMAND: continue
+
+Continuing.
+
+Breakpoint 1, compare_mtime (a=0x617110, b=0x617270) at ls.c:2884
+2884    static int compare_mtime (V a, V b) { return cmp_mtime (a, b, xstrcoll); }
+
+COMMAND: stepi
+timespec_cmp (b=..., a=...) at ../lib/timespec.h:49
+49        return diff ? diff : a.tv_nsec - b.tv_nsec;
+
+COMMAND: info local
+diff = -1092207184
+
+This next iteration gives us an extremely negative number, which with hint knowledge, can assume
+as integer overflow within timespec.h.
+COMMAND: quit
+to exit out of gdb
+
+We can then try editing the code with
+COMMAND: cd ~/Desktop/CS35L/Week5
+COMMAND: cp coreutils-with-bug/lib/timespec.h ./
+to copy into our current working directory (Week5)
+COMMAND: emacs timespec.h
+
+We see inside the header that the function has the comment
+
+/* Return negative, zero, positive if A < B, A == B, A > B, respectively.
+   Assume the nanosecond components are in range, or close to it.  */
+
+We can rewrite the code so that it does not rely on the diff (integer arithmetic) and instead use comparisons
+
+static inline int
+timespec_cmp (struct timespec a, struct timespec b)
+{
+  if (a.tv_sec < b.tv_sec) {
+     return -1;
+  }
+  else if (a.tv_sec > b.tv_sec) {
+     return 1;
+  } else {
+     return 0;
+  }
+}
+
+We can then create a diff file by
+COMMAND: diff -u coreutils-with-bug/lib/timespec.h timespec.h > temp.diff
+Make the ChangeLog with
+COMMAND: emacs
+COMMAND: C-x 4 a
+
+        * Changelog for lab 5 timespec.h
+	Uses comparison operator rather than arithmetic
+	Avoids integer overflow with huge differences
+	
+Then to create the lab5.diff with the changelog, we do
+COMMAND: cat ChangeLog >> lab5.diff
+COMMAND: cat temp.diff >> lab5.diff
+
+If we try patching at the moment with
+COMMAND: patch -p0 < lab5.diff
+We get an error due to invalid file path.
+We can fix this by manually adjusting the file path
+
+Then to edit the file, we go into emacs
+COMMAND: emacs lab5.diff
+We manually splice the paths to be both lib/timespec.h
+
+--- lib/timespec.h      2005-09-21 23:05:39.000000000 -0700
++++ lib/timespec.h      2020-05-08 05:04:24.491422000 -0700
+
+COMMAND: cp lab5.diff coreutils-with-bug/
+COMMAND: cd coreutils-with-bug/
+COMMAND: patch -p0 < lab5.diff
+COMMAND: make
+
+This should fix our bug in timespec.h
+We can try the same commands above at line 30-37, which now gives us
+
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 12:22:53.893237625 +0000 now1
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 12:22:52.890219965 +0000 now
+-rw-r--r-- 1 brandont csugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-cs35L
+
+This is now in the right order, which means the bug is now fixed.
+
+We can now test this in the home (~) directory
+COMMAND: cd ~
+
+COMMANDS:
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+touch now
+sleep 1
+touch now1
+TZ=UTC0 ls -lt --full-time wwi-armistice-cs35L now now1
+
+The issue with the SEASNET servers is that we now get this as the result
+
+-rw-r--r-- 1 brandont csugrad 0 2054-12-17 17:28:16.000000000 +0000 wwi-armistice-cs35L
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 12:26:36.777719000 +0000 now1
+-rw-r--r-- 1 brandont csugrad 0 2020-05-08 12:26:35.772714000 +0000 now
+
+Although technically in order, it seems that the SEASNET servers can't handle an old date like 1918, thus giving us a date in the future, 2054.
+This is likely because of an error with storing the value, either with imcompatibility with 32 and 64 bits, or unsigned vs signed.
+
+We can check the OS type with
+COMMAND: uname -a
+giving us
+
+Linux lnxsrv09.seas.ucla.edu 3.10.0-1062.9.1.el7.x86_64 #1 SMP Mon Dec 2 08:31:54 EST 2019 x86_64 GNU/Linux
+
+There is probably an issue where the value is stored in 64-bit but interpreted as 32-bits, thus causing an error.
+We can also have an issue where the bits are stored as signed, but interpreted by the system as unsigned, thus causing an error.

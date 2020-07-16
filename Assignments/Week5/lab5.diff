@@ -1,0 +1,25 @@
+2020-05-08  Brandon Z Truong  <brandont@lnxsrv09.seas.ucla.edu>
+
+	* Changelog for lab 5 timespec.h
+	Uses comparison operator rather than arithmetic
+	Avoids integer overflow with huge differences
+--- lib/timespec.h	2005-09-21 23:05:39.000000000 -0700
++++ lib/timespec.h	2020-05-08 05:04:24.491422000 -0700
+@@ -45,8 +45,15 @@
+ static inline int
+ timespec_cmp (struct timespec a, struct timespec b)
+ {
+-  int diff = a.tv_sec - b.tv_sec;
+-  return diff ? diff : a.tv_nsec - b.tv_nsec;
++  if (a.tv_sec < b.tv_sec) {
++    return -1;
++  }
++  else if (a.tv_sec > b.tv_sec) {
++    return 1;
++  }
++  else {
++    return 0;
++  }
+ }
+ 
+ # if ! HAVE_DECL_NANOSLEEP

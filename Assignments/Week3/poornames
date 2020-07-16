@@ -1,0 +1,170 @@
+#!/usr/bin/bash
+
+#705326387 Brandon Truong
+#I'm tired
+
+#-------------------------------------------#
+#Supporting Functions#
+invalidName() {
+    #1 Argument passed into function, filename stored in name and checked to
+    #see if invalid (1) or valid (0)
+    name=$1
+    #Checks if starts with .
+    if [ "${name:0:1}" == "." ]; then
+	return 1
+    #Checks if starts with -
+    elif [ "${name:0:1}" == "-" ]; then
+	return 1
+    #Checks name is longer than 14 chars
+    elif [ "${#name}" -gt 14 ]; then
+	return 1
+    #Checks if any invalid chars in name
+    elif [ `echo $name | grep -vP '^[a-zA-Z\.\-_]+$' | wc -m` -gt 0 ]; then
+	return 1
+    #If reaches this, then valid name
+    else
+	return 0
+    fi
+}
+validStartDirectory() {
+    #1 Argument passed into function, see if valid operand D
+    #Checks if exists first
+    if [ -e "$1" ]; then
+	#Is it a directory or not?
+	if [ ! -d "$1" ]; then
+	    echo "Start Directory is not valid" 1>&2
+	    exit 1
+	#Is is a link?
+	elif [ -L "$1" ]; then
+	    echo "Start Directory is symbolic link" 1>&2
+	    exit 1
+	#Valid Directory
+	else
+	    return 1
+	fi
+    #No directory/file with that name
+    else
+	echo "Directory: $1 doesn't exist" 1>&2
+	exit 1
+    fi
+}
+duplicateName() {
+    #Only called when invalidName fails, filename and path passed as args
+    #Name turned all into lowercase
+    name=$1
+    path=$2
+    #Finds everything in path excluding . and .. with -A
+    #Converts everything to lowercase
+    #Extracts duplicates that only contain $name
+    #wc -l will give greater than 1 if there is a duplicate, thus return 1
+    if [ `ls -A1 $path | tr -d "\'" | grep -i "^$name$" |
+    wc -l` -gt 1 ]; then
+       	return 1
+    else
+    #No duplicates, returns 0 so we gucci
+	return 0
+    fi
+}    
+#-------------------------------------------#
+#basic and recursive versions#
+basicPoornames() {
+    #Only works with 1 or less args
+    if [ $# -eq 0 ]; then
+	basicPoornames "."
+	return 1; #stop function call of 0 args
+    fi
+    #Only one argument
+    if [ $# -eq 1 ]; then
+	#Not valid operand
+	if [ ${1:0:1} == "-" ]; then
+	    echo "Operand starts with - when not supposed to" 1>&2
+	    exit 1
+     	else
+	    #Checks if starting directory is valid
+	    validStartDirectory "$1"
+	    #If reaches here, then valid directory
+	    DataList=`find $1 -maxdepth 1 -mindepth 1 -printf "%f\n" | 
+	    sort -u`
+	    Field_Separator=$IFS
+	    #Find list of filenames inside with newlines separating them
+	    IFS=$'\n'
+	    for val in $DataList;
+	    do
+		#Skip any directories that cannot be read
+		if [ ! -r "$1/$val" ] && [ -d "$1/$val" ]; then
+		    echo "Invalid read permissions for directory: $val" 1>&2
+		fi	
+	        #Stores results inside variables isValid or isDupe
+		#1 = poorname
+		invalidName $val
+		isValid=$?
+		isDupe=0
+		#Valid, check then for dupe
+		if [ $isValid == 0 ]; then
+	     	    duplicateName $val $1
+		fi
+		isDupe=$?
+		#To test, echo Invalid $isValid Dupe $isDupe
+		    if [ $isDupe == 1 ] || [ $isValid == 1 ]; then
+       			#Invalid filename, echo out with / in
+			#previous directory
+      			if [ -d "$1/$val" ]; then
+			    echo $1/$val/
+			else
+			    echo $1/$val
+			fi
+		    fi
+      	    done
+	    IFS=$Field_Separator
+	fi
+    else
+	#More than 1 args passed
+	echo "Invalid number of arguments passed: $#" 1>&2
+	exit 1
+    fi
+}
+recursivePoornames() {
+    #Look through the current directory
+    basicPoornames "$1"
+    #Find directories within current path
+    DataList=`find "$1" -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | 
+    sort -u`
+    Field_Separator=$IFS
+    #Find list of directories inside with newlines separating them
+    IFS=$'\n'
+    for val in $DataList;
+    do
+	#Recursively call recursivePoornames
+	dir="$1/$val"
+	if [ -r "$dir" ] && [ -d "$dir" ]; then
+	    recursivePoornames $dir
+	fi
+    done	                 
+}
+#-------------------------------------------#
+#if else statement block to run
+
+#Checks if starting operand is "-r"
+if [ "$1" == "-r" ]; then
+    shift
+    if [ -d "$1" ] && [ $# -eq 1 ]; then	
+	recursivePoornames "$1"
+    elif [ $# -eq 0 ]; then
+	recursivePoornames "."
+    else
+	if [ "${1:0:1}" == "-" ]; then
+	    echo "Not valid argument" 1>&2
+	else
+	    echo "Not valid directory" 1>&2
+	fi
+    fi
+#If given a directory at start
+elif [ -d "$1" ]; then
+    basicPoornames "$@"
+#No Directory
+elif [ $# -eq 0 ]; then
+    basicPoornames
+#Any other case, prints out errors from basic case
+else
+    basicPoornames "$@"
+fi

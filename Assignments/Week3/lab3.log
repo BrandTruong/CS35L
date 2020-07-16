@@ -1,0 +1,145 @@
+705326387 Brandon Truong
+
+1. I first ssh into lnxsrv09 and check my locale with
+   locale
+using
+   export LC_ALL='C'
+to set it properly.
+
+2. I then used
+   sort -u /usr/share/dict/words -o words
+to output a sorted list into words.
+
+3. I then did
+   wget https://web.cs.ucla.edu/classes/spring20/cs35L/assign/assign3.html
+to download the webpage, then ran the following:
+
+   tr -c 'A-Za-z' '[\n*]' < assign3.html
+   Since we take the complement of 'A-Za-z', we thus get every
+   non-alphabetical replaced with new lines. This means that we get all
+   the letters of the alphabet in the html with a bunch of new lines.
+
+   tr -cs 'A-Za-z' '[\n*]' < assign3.html
+   s removes all repeating new lines in a row (3 new lines become 1), giving
+   us the previous but compacted to a list-like form.
+
+   tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort
+   We get the previous document sorted in alphabetical order using the command
+   sort, allowing us to see duplicate words.
+
+   tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u
+   We get the previous document but without any duplicates since we use -u,
+   so every word is listed only once.
+
+   tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u | comm - words
+   comm compares two sets, listing the words they have similar and different
+   in columns. We get three columns in alphabetical order, the first column
+   being words unique to assign3.html, the second to words, and the third
+   with words both of them contain.
+
+   tr -cs 'A-Za-z' '[\n*]' < assign3.html | sort -u | comm -23 - words
+   #   ENGLISHCHECKER
+   -23 hides the 2nd and 3rd column, giving us only unique words found in
+   assign3.html
+									  
+4. I used
+   wget https://www.mauimapp.com/moolelo/hwnwdshw.htm
+to download the Hawaiian page.
+
+5. To create my script, I first created a shell script with
+   touch buildwords
+and then used
+    chmod +x buildwords
+to give me permission to execute
+
+6. Inside the script, I wrote
+
+   #!/usr/bin/bash
+This tells the OS to run the bash interpreter
+   sed 's/?\|<u>\|<\/u>//g' |
+This removes all ? <u> and </u> from the document
+   tr "\`" "'" |
+This changes the grave ` to apostrophes '
+   tr "-" " " |
+This changes hyphens - to spaces " "
+   tr "[A-Z]" "[a-z]" |
+This changes all upper case to lower case
+   grep " *<td[A-Za-z\"\= ]*>[pk'mnwlhaeiou ]*<\/td> *" |
+This extracts all the lines starting with any amount of spaces, then "<td"
+and then anything inside before the ">"
+
+The use of "[pk'mnwlhaeiou ]*" allows me to select anything that includes
+Hawaiian words.
+
+The use of "<\/td> *" stops extracting once we reach "</td>"
+
+After all this, we are left with only Hawaiian words and "<td></td>"
+   sed 's/ *<td[A-Za-z\"= ]*>//g' |
+This deletes the starting "<td>" statements, including text between td and >
+eg. <td valign="top">
+   sed 's/<\/td> *//g' |
+This deletes the ending "</td>" statements
+
+We are now left with only Hawaiian words.
+   tr " " "\n" |
+This changes all spaces to new lines, separating the words
+   tr -s '\n' |
+This squeezes all new lines so that there is no additional new lines inside
+   sort -u
+This sorts in alphabetical order and removes any repeating words
+
+
+7. To test, I used
+   cat hwnwdshw.htm | ./buildwords | less
+which gave me a list of 302 words.
+
+8. I then created hwords with the command
+   cat hwnwdshw.htm | ./buildwords > hwords
+
+9. I created a shell command to check the spelling of Hawaiian words
+   tr '[A-Z]' '[a-z]' < assign3.html | tr -cs "pk\'mnwlhaeiou" '[\n*]' |
+   sort -u | comm -23 - hwords
+   # HAWAIIANCHECKER
+where assign3.html can be replaced with any file that you want checked.
+
+10. To count the number of misspelled English words, I used
+    tr -cs 'A-Za-z' '[\n*]' < assign3.html | tr '[A-Z]' '[a-z]' |
+    sort -u | comm -23 - words | wc -w
+which gives me 51 misspelled English words.
+
+and to count the Hawaiian, I used
+    tr '[A-Z]' '[a-z]' < assign3.html | tr -cs "pk\'mnwlhaeiou" '[\n*]' |
+    sort -u | comm -23 - hwords | wc -w
+which gives me 228 misspelled Hawaiian words.
+
+To test against itself, I did
+   tr '[A-Z]' '[a-z]' < hwords | tr -cs "pk\'mnwlhaeiou" '[\n*]' | sort -u |
+   comm -23 - hwords | wc -w
+which gives me 0.
+
+11. To see what is mispelled in English but not Hawaiian, I pushed
+    # ENGLISHCHECKER
+    tr -cs 'A-Za-z' '[\n*]' < assign3.html | tr '[A-Z]' '[a-z]' | sort -u |
+    comm -23 - words > englishtest
+to a file called englishtest and used
+    comm -12 englishtest hwords | wc -w
+to find which words they had in common, thus giving us the words
+misspelled in English but not in Hawaiian
+which gives me a total of 3 words.
+      kahiki
+      lau
+      wiki
+I then pushed #HAWAIIANCHECKER
+  tr '[A-Z]' '[a-z]' < assign3.html | tr -cs "pk\'mnwlhaeiou" '[\n*]' |
+  sort -u | comm -23 - hwords > hawaiiantest
+to a file called hawaiiantest and then did
+   comm -12 hawaiiantest words | wc -w
+to get the words mispelled in Hawaiian but not in English
+giving me a total of 119 words. Two examples include
+       alone
+       home
+found using
+   comm -12 hawaiiantest words
+
+
+

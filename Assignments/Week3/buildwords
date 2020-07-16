@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+
+#705326387 Brandon Truong
+#Explanation in lab3.log
+
+sed 's/?\|<u>\|<\/u>//g' |
+tr "\`" "'" |
+tr "-" " " |
+tr "[A-Z]" "[a-z]" |
+grep " *<td[A-Za-z\"\= ]*>[pk'mnwlhaeiou ]*<\/td> *" |
+sed 's/ *<td[A-Za-z\"= ]*>//g' |
+sed 's/<\/td> *//g' |
+tr " " "\n" |
+tr -s '\n' |
+sort -u

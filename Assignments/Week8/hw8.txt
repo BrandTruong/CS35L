@@ -1,0 +1,131 @@
+705326387 Brandon Truong
+
+1. I made this file by doing 
+COMMAND: emacs hw8.txt
+
+2. using the repository from the lab, I did
+COMMAND: cd diffutils
+COMMAND: git checkout -b "quote" v3.0
+
+3. I installed the patch by doing within the diffutils directory
+COMMAND: patch -p1 < ~/Desktop/CS35L/Week8/quote-3.0-patch.txt
+
+giving us:
+
+patching file src/cmp.c
+patching file src/diff.c
+patching file src/diff3.c
+patching file src/dir.c
+patching file src/sdiff.c
+patching file src/util.c
+
+4. I read the gnu pages about add-change-log-entry-other-window with the linked provided
+which uses
+COMMAND: C-x 4 a
+
+to add new entries to a change log
+
+5. we can access the ChangeLog for the patch by doing
+COMMANDS: emacs
+C-x 4 a
+
+which opens up the ChangeLog, which we can then write in:
+
+2020-05-29  Brandon Z Truong  <brandont@lnxsrv09.seas.ucla.edu>
+
+	* src/cmp.c: changed quotes in char strings to use ' rather than `
+        * src/diff.c: changed quotes in char strings to use ' rather than `
+        * src/diff3.c: changed quotes in char strings to use ' rather than `
+        * src/dir.c: changed quotes in char strings to use ' rather than `
+        * src/sdiff.c: changed quotes in char strings to use ' rather than `
+        * src/util.c: changed quotes in char strings to use ' rather than `
+
+6. We can then commit our changes by doing
+COMMAND: git commit -a -F ChangeLog
+
+a automatically stages all modified files to the index, while commit -f commits with the file specified as the commit message.
+We then get the message:
+
+[quote e301a28] 2020-05-29  Brandon Z Truong  <brandont@lnxsrv09.seas.ucla.edu>
+ Committer: Brandon Z Truong <brandont@lnxsrv09.seas.ucla.edu>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 6 files changed, 43 insertions(+), 43 deletions(-)
+
+7. We can format a patch by doing
+COMMAND: git format-patch -1 --stdout > ~/Desktop/CS35L/Week8/formatted-patch.txt
+
+8. We can test this patch by then doing
+COMMANDS: git clone ~eggert/src/gnu/diffutils testdiffutils
+cd testdiffutils
+git checkout -b patchery v3.0
+git am ~/Desktop/CS35L/Week8/formatted-patch.txt
+
+This patches our files, which we can then build and test with
+COMMANDS: ./bootstrap
+patch -p0 < ~/Desktop/CS35L/Week8/diffutils-gets.diff
+./configure
+make
+make check
+
+with the patch between bootstrap and configure being an in case due to being on lnxsrv09
+
+We can then do
+COMMANDS:
+./src/diff . -
+./src/diff --help
+
+which shows the correct changes from ` to '
+
+9. If we do
+COMMAND: make distdir
+
+we make a new dir called diffutils-3.0.1-fe00
+We can then do
+COMMANDS: cd diffutils-3.0.1-fe00
+emacs ChangeLog
+
+We then get our ChangeLog with the most recent result being ours:
+
+2020-05-29  Brandon Z Truong  <brandont@lnxsrv09.seas.ucla.edu>
+
+        2020-05-29 Brandon Z Truong <brandont@lnxsrv09.seas.ucla.edu>
+                * src/cmp.c: changed quotes in char strings to use ' rather than `
+                * src/diff.c: changed quotes in char strings to use ' rather than `
+                * src/diff3.c: changed quotes in char strings to use ' rather than `
+                * src/dir.c: changed quotes in char strings to use ' rather than `
+                * src/sdiff.c: changed quotes in char strings to use ' rather than `
+                * src/util.c: changed quotes in char strings to use ' rather than `
+
+There is a repeat of date and my name since I accidentally included it in the ChangeLog and an automatic one was generated during the commit. 
+
+10. we can open gitk by doing
+COMMANDS:
+ssh -Y brandont@lnxsrv09.seas.ucla.edu
+cd ~eggert/src/gnu/emacs
+gitk
+
+which opens up gitk through x11 forwarding.
+I found a merge with the Find option and the keyword 'Merge', giving us:
+
+Author: Joakim Verona <joakim@verona.se>  2015-01-25 12:19:27
+...
+Merge branch 'master' into xwidget
+
+I believe this is the most recent merge from 2015-01-25.
+
+On the top, we see three sections. The left shows a tree with multiple branches of commits and parent relationships. The middle shows the Author of the commit. The right shows the date of the commit.
+
+We see in the middle the SHA1 ID, the row number, and both Find and Search options.
+
+On the bottom left, we see commit details (Author, Parent, etc) as well as diff output in their respective files. The bottom right shows an outline, from Comments to modified files.

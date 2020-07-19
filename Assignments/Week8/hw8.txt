@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 1. I made this file by doing 
 COMMAND: emacs hw8.txt

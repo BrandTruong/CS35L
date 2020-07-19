@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 1. I first did
 COMMAND: wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz

@@ -1,4 +1,4 @@
-//705326387 Brandon Truong
+// Brandon Truong
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>

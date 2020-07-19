@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-#705326387 Brandon Truong
+# Brandon Truong
 #Explanation in lab3.log
 
 sed 's/?\|<u>\|<\/u>//g' |

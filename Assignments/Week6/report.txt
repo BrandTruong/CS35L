@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 1. I wrote my tr2b.c file using visual studio code, then importing it to the lnxsrv by winscp.
 I then compiled it using

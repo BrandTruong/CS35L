@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 1. I first obtained the diffutils from ~eggert/src/gnu/diffutils by using
 COMMAND: git clone ~eggert/src/gnu/diffutils

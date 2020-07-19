@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 To generate my public and private keys, I did
 

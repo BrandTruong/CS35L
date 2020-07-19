@@ -1,4 +1,4 @@
-705326387 Brandon Truong
+ Brandon Truong
 
 I first did
 COMMAND: wget https://web.cs.ucla.edu/classes/spring20/cs35L/assign/coreutils-with-bug.tar.gz

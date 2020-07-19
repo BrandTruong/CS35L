@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#705326387 Brandon truong
+# Brandon truong
 
 import random, sys, argparse, string
 

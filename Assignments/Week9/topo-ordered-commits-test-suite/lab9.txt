@@ -1,0 +1,171 @@
+Brandon Truong
+
+1. To enter the folder first, we do
+COMMAND: cd ~eggert/src/gnu/emacs-CS-35L
+
+The .git folder can be found by doing
+COMMAND:  du -h | grep ".git"
+
+which gives us in a human readable format:
+---
+415M    ./.git
+---
+
+and
+COMMAND: du -ch | grep "total"
+
+gives us the total
+---
+577M    total
+---
+
+subtracting the total by .git's size, we get:
+
+577M - 415M = 162M
+
+Which means we get disk space used in ~eggert/src/gnu/emacs-CS-35L
+working directories: 162 MB
+git repository: 415 MB
+
+We can get it in disk blocks by doing
+
+COMMAND: du | grep ".git"
+
+---
+424356  ./.git
+---
+
+COMMAND: du -c | grep "total"
+
+---
+590312  total
+---
+590312 - 424356 = 165956 disk blocks
+
+working directories: 165956 disk blocks
+git repository: 424356 disk blocks
+
+where each disk block is in 1024 bytes (default)
+
+2. We can get the number of local branches by doing
+COMMAND: git branch | wc -l
+
+giving us 176 local branches
+We can then do
+COMMAND: git branch -r | wc -l
+
+to find the number of remote branches
+giving us 177 remote branches
+
+We can then check that
+COMMAND: git branch -a | wc -l
+
+which gives 353
+is equal to the sum of local and remotes
+353 = 176 + 177
+
+3. We can find the remote repositories by doing
+COMMAND: git remote
+
+giving us:
+---
+origin
+savannah
+---
+We can then do 
+COMMAND: git remote show origin
+
+to find the URL origin is stored in:
+---
+* remote origin
+  Fetch URL: /u/cs/fac/eggert/src/gnu/emacs
+  Push  URL: /u/cs/fac/eggert/src/gnu/emacs
+---
+
+and
+COMMAND: git remote show savannah
+
+to find the one for savannah
+---
+* remote savannah
+  Fetch URL: https://git.savannah.gnu.org/git/emacs.git
+  Push  URL: https://git.savannah.gnu.org/git/emacs.git
+---
+
+4. We can find the 10 local branches recently committed to by doing
+COMMAND: git for-each-ref --sort='-committerdate' refs/heads --count=10 --format="%(objectname) commit %(refname) | %(committerdate)"
+
+giving us:
+---
+104b68b670eb6de6614c562ae6b18c009b20584f commit refs/heads/master | Sun May 24 18:48:16 2020 +0200
+d2873706749ef68803e79bab6109a534f4c9d23a commit refs/heads/scratch/joaot/make-completion-at-point-function | Wed Nov 20 00:00:11 2019 +0000
+dd3fa9411a28175f9a1a984a69cfa7162023c5df commit refs/heads/feature/windows-with-utils | Mon Nov 18 21:59:44 2019 +0000
+8f22251e595d7598d6643b0d24bf5f409dc59fa8 commit refs/heads/scratch/completion-api | Sat Nov 16 19:44:19 2019 -0500
+8a4de19dfb52551a65c360a9346ede137d0fc6e8 commit refs/heads/scratch/a-modest-completion-redesign-proposal | Sun Nov 10 23:01:46 2019 +0000
+2b0f589134d9427a96ab8cf0d8473715740984ef commit refs/heads/scratch/fido-mode | Tue Nov 5 18:04:20 2019 +0000
+924a4201d24c10c48db920815ebf98dfaadc1e85 commit refs/heads/feature/gnus-select2 | Sun Nov 3 16:37:02 2019 +0800
+7a10082093791f0e035e4f9f95a774a7be1cd586 commit refs/heads/feature/extend_face_id | Mon Oct 14 14:18:42 2019 +0200
+079461b360a2467ff4ab2ec57516c6f9e45f50fe commit refs/heads/scratch/jit-lock-antiblink-cleaned-up | Thu Oct 10 22:51:23 2019 +0100
+55dcd32ad2209dc34bfb6b713bf73be9bf4c4cb2 commit refs/heads/emacs-26 | Mon Oct 7 18:52:33 2019 +0800
+---
+
+5. We can do
+COMMAND: git rev-list --count master
+
+giving us 141268 commits in the master branch
+
+6. To find the total, we can do
+COMMAND: git rev-list --count --all
+
+giving us 145595 total commits. We then get 141268/145595=.97028057282, meaning 97.03% of all commits are from the master branch.
+
+7. We can find th3 10 authors with the most commits since 2013 by doing
+COMMAND: git shortlog --after=2013 --numbered --summary | head -n 10
+
+giving us
+---
+  3694  Eli Zaretskii
+  3603  Paul Eggert
+  3340  Glenn Morris
+  1833  Lars Ingebrigtsen
+  1712  Stefan Monnier
+  1580  Michael Albinus
+   647  Dmitry Gutov
+   604  Noam Postavsky
+   530  Juri Linkov
+   487  Alan Mackenzie
+---
+
+8. We can init gitk by doing X-Forwarding
+COMMMANDS: ssh seasx11 (my shorthand for ssh -X brandont@lnxsrv09.seas.ucla.edu)
+cd ~eggert/src/gnu/emacs-CS-35L
+gitk
+
+since the hw hints tell us to only list the merge commits and I'm really lazy to make a diagram, the merge commits are
+
+
+0c06b93c1e467debd401eb0b3be4652fde14fa95
+
+abcb2e62dae6aa26308f7ac9efc89247f89cbe65
+
+98ac36efe4ce4bd3a0bca76fc73ce6c7abaa4371
+
+Here are some relationships not in a diagram
+
+parent: 4ea37c2b8b0c5a68fde59770c3536195e0972217
+childs: 977cd6cb28a37744966ec62f70cf62659f6f302a
+	625cee531623feddbe3174fad52c7db96ec60bb3
+
+separ:  5490ccc5ebf39759dfd084bbd31f464701a3e775
+
+merge:  0c06b93c1e467debd401eb0b3be4652fde14fa95
+
+parent: 820739bbb572b30b6ce45756c9960e48dca859af
+childs: 00e4e3e9d273a193620c3a4bb4914e555cb8e343
+
+separ:  49cd561dc62ea6b3fbedab7aef0f020733f4cf09
+
+merge:  abcb2e62dae6aa26308f7ac9efc89247f89cbe65
+
+merge:  98ac36efe4ce4bd3a0bca76fc73ce6c7abaa4371
+
